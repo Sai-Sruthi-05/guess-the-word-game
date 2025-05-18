@@ -23,19 +23,39 @@ h1 {
 }
 
 button {
-    padding: 10px 20px;
+    padding: 12px 24px;
     margin: 10px;
     border: none;
     border-radius: 8px;
     background-color: #00c9a7;
     color: #fff;
-    font-size: 1em;
+    font-size: 1rem;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
 }
 
 button:hover {
     background-color: #008f7a;
+    transform: scale(1.05);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+}
+
+button::after {
+    content: "";
+    position: absolute;
+    background: rgba(255, 255, 255, 0.3);
+    width: 100%;
+    height: 100%;
+    left: -100%;
+    top: 0;
+    transition: left 0.4s ease;
+}
+
+button:hover::after {
+    left: 0;
 }
 
 #guess-input {
