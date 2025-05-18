@@ -2,21 +2,34 @@ $(document).ready(function () {
   const $startsound = $("#startsound");
   const $endsuccesssound = $("#endsuccesssound");
   const $endfailsound = $("#endfailsound");
-  
+  const $spinner = $("#spinner");
+
+  const $wordContainer = $("#word-container");
+  const $guessForm = $("#guess-form");
+  const $guessInput = $("#guess-input");
+  const $submitButton = $("#submitButton");
+  const $chancesSpan = $("#chances");
+  const $lengthSpan = $("#length");
+  const $feedbackDiv = $("#feedback");
+  const $historyList = $("#history-list");
+
+  let secretWord = "";
+  let maxTries = "";
+  let chancesLeft = maxTries;
+  let guessedWords = [];
+
   $("#start-button").on("click", function () {
-    $(this).prop("disabled", true); 
-    $submitButton.prop("disabled", false); 
-    fetchRandomWord(); 
+    $(this).prop("disabled", true);
+    $submitButton.prop("disabled", false);
+    $spinner.removeClass("hidden"); // Show spinner
+    fetchRandomWord();
   });
 
   function fetchRandomWord() {
     $startsound[0].play();
-    fetch("https://random-word-api.vercel.app/api?words=1&length=5", {
-      method: "GET",
-    })
+    fetch("https://random-word-api.vercel.app/api?words=1&length=5")
       .then((response) => response.json())
       .then((data) => {
-        console.log(data);
         secretWord = data[0].toUpperCase();
         maxTries = secretWord.length + 1;
         chancesLeft = maxTries;
@@ -27,49 +40,12 @@ $(document).ready(function () {
         console.log("Secret Word: ", secretWord);
       })
       .catch((error) => {
-        console.error("Error: ", error.message);
+        console.error("Error fetching word: ", error.message);
+      })
+      .finally(() => {
+        $spinner.addClass("hidden"); // Hide spinner in all cases
       });
   }
-  
-  function showResult(feedback) {
-    if (feedback.every((val) => val === "C")) {
-      $endsuccesssound[0].play();
-      const $resultDiv = $(
-        '<div class="result-message">Congratulations! You guessed the word correctly.</div>'
-      );
-      $resultDiv.hide().appendTo(".container").fadeIn(1000);
-    } else {
-      $endfailsound[0].play();
-      const $resultDiv = $(
-        '<div class="result-message">Sorry, you ran out of chances. The correct word was ' +
-          secretWord +
-          ".</div>"
-      );
-      $resultDiv.hide().appendTo(".container").fadeIn(1000);
-    }
-
-    $guessInput.prop("disabled", true);
-    $submitButton.prop("disabled", true);
-    $guessForm.off("submit");
-
-    $chancesSpan.text("0");
-    $feedbackDiv.empty();
-  }
-  
-
-  let secretWord = "";
-  let maxTries = "";
-  let chancesLeft = maxTries;
-  let guessedWords = [];
-
-  const $wordContainer = $("#word-container");
-  const $guessForm = $("#guess-form");
-  const $guessInput = $("#guess-input");
-  const $submitButton = $("#submitButton");
-  const $chancesSpan = $("#chances");
-  const $lengthSpan = $("#length");
-  const $feedbackDiv = $("#feedback");
-  const $historyList = $("#history-list");
 
   $guessForm.on("submit", function (event) {
     event.preventDefault();
@@ -81,7 +57,6 @@ $(document).ready(function () {
       chancesLeft--;
       $chancesSpan.text(chancesLeft);
 
-      // Condition for game over
       if (feedback.every((val) => val === "C") || chancesLeft === 0) {
         showResult(feedback);
       }
@@ -92,8 +67,7 @@ $(document).ready(function () {
   });
 
   function checkWordle(guess) {
-    const originalWord = secretWord; 
-
+    const originalWord = secretWord;
     let secretLetters = {};
     let guessLetters = {};
     let feedback = guess.split("").map((letter, index) => {
@@ -103,6 +77,7 @@ $(document).ready(function () {
       } else {
         secretLetters[correctLetter] = (secretLetters[correctLetter] || 0) + 1;
         guessLetters[letter] = (guessLetters[letter] || 0) + 1;
+        return null;
       }
     });
 
@@ -122,6 +97,29 @@ $(document).ready(function () {
     return feedback;
   }
 
+  function showResult(feedback) {
+    if (feedback.every((val) => val === "C")) {
+      $endsuccesssound[0].play();
+      const $resultDiv = $(
+        '<div class="result-message">Congratulations! You guessed the word correctly.</div>'
+      );
+      $resultDiv.hide().appendTo(".container").fadeIn(1000);
+    } else {
+      $endfailsound[0].play();
+      const $resultDiv = $(
+        `<div class="result-message">Sorry, you ran out of chances. The correct word was ${secretWord}.</div>`
+      );
+      $resultDiv.hide().appendTo(".container").fadeIn(1000);
+    }
+
+    $guessInput.prop("disabled", true);
+    $submitButton.prop("disabled", true);
+    $guessForm.off("submit");
+
+    $chancesSpan.text("0");
+    $feedbackDiv.empty();
+  }
+
   function renderWordContainers() {
     $wordContainer.empty();
     for (let i = 0; i < secretWord.length; i++) {
@@ -131,7 +129,7 @@ $(document).ready(function () {
 
   function renderHistory() {
     $historyList.empty();
-    guessedWords.forEach((word, index) => {
+    guessedWords.forEach((word) => {
       const feedback = checkWordle(word);
       let wordHtml = "";
       word.split("").forEach((letter, index) => {
@@ -146,8 +144,6 @@ $(document).ready(function () {
           case "W":
             letterClass = "wrong";
             break;
-          default:
-            break;
         }
         wordHtml += `<span class="letter ${letterClass}">${letter}</span>`;
       });
@@ -161,5 +157,6 @@ $(document).ready(function () {
   function reloadPage() {
     location.reload();
   }
+
   $("#reload-button").on("click", reloadPage);
 });
